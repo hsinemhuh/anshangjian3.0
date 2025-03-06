@@ -817,17 +817,25 @@
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
             background-color: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            transition: background-color var(--animation-medium) ease;
+            z-index: 1000;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transform: translateY(0);
+            opacity: 1;
         }
-        
+
         body.dark-mode .header-fixed {
             background-color: rgba(30, 30, 30, 0.95);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-fixed.hidden {
+            opacity: 0;
+            transform: translateY(-100%);
+            pointer-events: none;
         }
         
         /* 背诵比对展示卡片样式 */
@@ -1530,7 +1538,7 @@
 </head>
 <body class="bg-gray-100">
     <!-- 固定标题卡片 -->
-    <header class="header-fixed">
+    <header class="header-fixed" id="headerFixed">
         <div class="container mx-auto px-4 py-4">
             <div class="flex flex-col md:flex-row items-center justify-between">
                 <div>
@@ -1645,7 +1653,7 @@
                         <div class="dynamic-island"></div>
                     </div>
                     <div class="screen">
-                        <iframe src="pages/recite.html"></iframe>
+                        <iframe src="pages/recite.html" style="width: 100%; height: 100%; border: none; overflow: visible;"></iframe>
                     </div>
                     <div class="home-indicator"></div>
                 </div>
@@ -1955,6 +1963,13 @@
     <div class="tooltip" id="tooltip"></div>
     <div class="version-badge">v1.2.9</div>
 
+    <!-- 页面底部 -->
+    <footer class="mt-12 py-8 bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-600 dark:text-gray-400">「岸上见」App原型设计 © 2025</p>
+        </div>
+    </footer>
+
     <script>
         // 开屏页播放控制
         const loopControl = document.getElementById('loopControl');
@@ -1978,13 +1993,13 @@
         const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         
         // 检查本地存储中的主题设置
-        let savedTheme = localStorage.getItem('darkMode');
+        let savedTheme = localStorage.getItem('darkModeType');
         if (savedTheme === null && prefersDarkMode) {
             // 如果没有保存的设置但系统偏好深色模式
             document.body.classList.add('dark-mode');
             themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-            localStorage.setItem('darkMode', 'enabled');
-        } else if (savedTheme === 'enabled') {
+            localStorage.setItem('darkModeType', 'dark');
+        } else if (savedTheme === 'dark') {
             document.body.classList.add('dark-mode');
             themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
         }
@@ -1992,12 +2007,12 @@
         themeToggle.addEventListener('click', () => {
             if (document.body.classList.contains('dark-mode')) {
                 document.body.classList.remove('dark-mode');
-                localStorage.setItem('darkMode', 'disabled');
+                localStorage.setItem('darkModeType', 'light');
                 themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
                 showTooltip('已切换至浅色模式');
             } else {
                 document.body.classList.add('dark-mode');
-                localStorage.setItem('darkMode', 'enabled');
+                localStorage.setItem('darkModeType', 'dark');
                 themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
                 showTooltip('已切换至深色模式');
             }
@@ -2054,7 +2069,7 @@
         
         // 监听系统深色模式变化
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-            const savedTheme = localStorage.getItem('darkMode');
+            const savedTheme = localStorage.getItem('darkModeType');
             // 只有当用户没有明确设置偏好时，才跟随系统
             if (savedTheme === null) {
                 if (e.matches) {
@@ -2098,6 +2113,34 @@
             setTimeout(() => {
                 showTooltip('原型设计加载完成 👋');
             }, 1000);
+        });
+
+        // 滚动监听，控制顶部卡片的显示和隐藏
+        document.addEventListener('DOMContentLoaded', function() {
+            const headerFixed = document.getElementById('headerFixed');
+            let lastScrollTop = 0;
+            let scrollThreshold = 100;
+            
+            // 初始状态设置
+            headerFixed.style.transform = 'translateY(0)';
+            headerFixed.style.opacity = '1';
+            
+            window.addEventListener('scroll', function() {
+                const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+                
+                // 向下滚动超过阈值，隐藏标题
+                if (currentScroll > lastScrollTop && currentScroll > scrollThreshold) {
+                    headerFixed.style.transform = 'translateY(-100%)';
+                    headerFixed.style.opacity = '0';
+                } 
+                // 向上滚动或在顶部，显示标题
+                else if (currentScroll < lastScrollTop || currentScroll < scrollThreshold) {
+                    headerFixed.style.transform = 'translateY(0)';
+                    headerFixed.style.opacity = '1';
+                }
+                
+                lastScrollTop = currentScroll <= 0 ? 0 : currentScroll; // 防止负滚动
+            }, false);
         });
     </script>
 </body>
